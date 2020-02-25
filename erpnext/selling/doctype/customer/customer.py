@@ -6,13 +6,15 @@ import frappe
 from frappe.model.naming import set_name_by_naming_series
 from frappe import _, msgprint, throw
 import frappe.defaults
-from frappe.utils import flt, cint, cstr, today
+from frappe.utils import flt, cint, cstr, today, get_formatted_email
 from frappe.desk.reportview import build_match_conditions, get_filters_cond
 from erpnext.utilities.transaction_base import TransactionBase
 from erpnext.accounts.party import validate_party_accounts, get_dashboard_info, get_timeline_data # keep this
 from frappe.contacts.address_and_contact import load_address_and_contact, delete_contact_and_address
 from frappe.model.rename_doc import update_linked_doctypes
 from frappe.model.mapper import get_mapped_doc
+from frappe.utils.user import get_users_with_role
+
 
 class Customer(TransactionBase):
 	def get_feed(self):
@@ -321,10 +323,19 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 			.format(customer, customer_outstanding, credit_limit))
 
 		# If not authorized person raise exception
-		credit_controller = frappe.db.get_value('Accounts Settings', None, 'credit_controller')
-		if not credit_controller or credit_controller not in frappe.get_roles():
-			throw(_("Please contact to the user who have Sales Master Manager {0} role")
-				.format(" / " + credit_controller if credit_controller else ""))
+		credit_controller_role = frappe.db.get_single_value('Accounts Settings', 'credit_controller')
+		if not credit_controller_role or credit_controller_role not in frappe.get_roles():
+			credit_controller_users = get_users_with_role(credit_controller_role or "Sales Master Manager")
+			credit_controller_users = [get_formatted_email(user) for user in credit_controller_users
+				if frappe.db.exists("Employee", {"prefered_email": user})]
+
+			if credit_controller_users:
+				message = "Please contact any of the following users to extend the credit limits for {0}:\n{1}".format(
+					customer, "\n".join(credit_controller_users).replace("<", "(").replace(">", ")"))
+			else:
+				message = "Please contact your administrator to extend the credit limits for {0}.".format(customer)
+
+			throw(_(message))
 
 def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=False, cost_center=None):
 	# Outstanding based on GL Entries
