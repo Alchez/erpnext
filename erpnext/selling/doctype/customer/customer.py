@@ -330,8 +330,8 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 				if frappe.db.exists("Employee", {"prefered_email": user})]
 
 			if credit_controller_users:
-				message = "Please contact any of the following users to extend the credit limits for {0}:\n{1}".format(
-					customer, "\n".join(credit_controller_users).replace("<", "(").replace(">", ")"))
+				message = "Please contact any of the following users to extend the credit limits for {0}:<br><br><li>{1}</li>".format(
+					customer, '[li]'.join(credit_controller_users).replace("<", "(").replace(">",")").replace("[","<").replace("]",">"))
 			else:
 				message = "Please contact your administrator to extend the credit limits for {0}.".format(customer)
 
