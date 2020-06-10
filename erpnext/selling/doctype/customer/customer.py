@@ -3,6 +3,7 @@
 
 from __future__ import unicode_literals
 import frappe
+import json
 from frappe.model.naming import set_name_by_naming_series
 from frappe import _, msgprint, throw
 import frappe.defaults
@@ -326,16 +327,36 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 		credit_controller_role = frappe.db.get_single_value('Accounts Settings', 'credit_controller')
 		if not credit_controller_role or credit_controller_role not in frappe.get_roles():
 			credit_controller_users = get_users_with_role(credit_controller_role or "Sales Master Manager")
+			credit_controller_users_list = [user for user in credit_controller_users
+				if frappe.db.exists("Employee", {"prefered_email": user})]
 			credit_controller_users = [get_formatted_email(user) for user in credit_controller_users
 				if frappe.db.exists("Employee", {"prefered_email": user})]
 
 			if credit_controller_users:
-				message = "Please contact any of the following users to extend the credit limits for {0}:<br><br><li>{1}</li>".format(
+				message = "Please contact any of the following users to extend the credit limits for {0}:<br><br><ul><li>{1}</li></ul>".format(
 					customer, '[li]'.join(credit_controller_users).replace("<", "(").replace(">",")").replace("[","<").replace("]",">"))
+
+				# if users has credit controller role set then send emails.
+				frappe.msgprint(message, title="Message",
+					raise_exception=1,
+					primary_action={
+						'label': 'Send Email',
+						'server_action': 'erpnext.selling.doctype.customer.customer.send_emails',
+						'args': {
+							'customer': customer,
+							'message': message,
+							'credit_controller_users_list': credit_controller_users_list
+					}
+				})
 			else:
 				message = "Please contact your administrator to extend the credit limits for {0}.".format(customer)
+				throw(_(message))
 
-			throw(_(message))
+@frappe.whitelist()
+def send_emails(args):
+	args = json.loads(args)
+	subject = (_("Credit limit reached for customer {0}").format(args.get('customer')))
+	frappe.sendmail(recipients=[args.get('credit_controller_users_list')], subject=subject, message=args.get('message'))
 
 def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=False, cost_center=None):
 	# Outstanding based on GL Entries
