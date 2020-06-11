@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import frappe
 import json
 from frappe.model.naming import set_name_by_naming_series
-from frappe import _, msgprint, throw
+from frappe import _, msgprint
 import frappe.defaults
 from frappe.utils import flt, cint, cstr, today, get_formatted_email
 from frappe.desk.reportview import build_match_conditions, get_filters_cond
@@ -329,15 +329,14 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 			credit_controller_users = get_users_with_role(credit_controller_role or "Sales Master Manager")
 			credit_controller_users_list = [user for user in credit_controller_users
 				if frappe.db.exists("Employee", {"prefered_email": user})]
-			credit_controller_users = [get_formatted_email(user) for user in credit_controller_users
-				if frappe.db.exists("Employee", {"prefered_email": user})]
+			credit_controller_users = [get_formatted_email(user) for user in credit_controller_users_list]
 
 			if credit_controller_users:
 				message = "Please contact any of the following users to extend the credit limits for {0}:<br><br><ul><li>{1}</li></ul>".format(
 					customer, '[li]'.join(credit_controller_users).replace("<", "(").replace(">",")").replace("[","<").replace("]",">"))
 
 				# if users has credit controller role set then send emails.
-				frappe.msgprint(message, title = "Message",
+				frappe.msgprint(message, title = "Notify",
 					raise_exception = 1,
 					primary_action = {
 						'label': 'Send Email',
@@ -351,7 +350,7 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 				})
 			else:
 				message = "Please contact your administrator to extend the credit limits for {0}.".format(customer)
-				throw(_(message))
+				frappe.throw(_(message))
 
 @frappe.whitelist()
 def send_emails(args):
