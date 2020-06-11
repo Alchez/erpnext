@@ -337,14 +337,15 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 					customer, '[li]'.join(credit_controller_users).replace("<", "(").replace(">",")").replace("[","<").replace("]",">"))
 
 				# if users has credit controller role set then send emails.
-				frappe.msgprint(message, title="Message",
-					raise_exception=1,
-					primary_action={
+				frappe.msgprint(message, title = "Message",
+					raise_exception = 1,
+					primary_action = {
 						'label': 'Send Email',
 						'server_action': 'erpnext.selling.doctype.customer.customer.send_emails',
 						'args': {
 							'customer': customer,
-							'message': message,
+							'customer_outstanding': customer_outstanding,
+							'credit_limit': credit_limit,
 							'credit_controller_users_list': credit_controller_users_list
 					}
 				})
@@ -356,7 +357,9 @@ def check_credit_limit(customer, company, ignore_outstanding_sales_order=False, 
 def send_emails(args):
 	args = json.loads(args)
 	subject = (_("Credit limit reached for customer {0}").format(args.get('customer')))
-	frappe.sendmail(recipients=[args.get('credit_controller_users_list')], subject=subject, message=args.get('message'))
+	message = (_("Credit limit has been crossed for customer {0} ({1}/{2})")
+			.format(args.get('customer'), args.get('customer_outstanding'), args.get('credit_limit')))
+	frappe.sendmail(recipients=[args.get('credit_controller_users_list')], subject=subject, message=message)
 
 def get_customer_outstanding(customer, company, ignore_outstanding_sales_order=False, cost_center=None):
 	# Outstanding based on GL Entries
