@@ -1,134 +1,139 @@
 <style>
-.print-format.landscape {
-	margin: 100px;
-}
+	.print-format.landscape {
+		margin: 100px;
+	}
 
-.print-format td,.print-format th{
-	padding: 12px !important ;
-}
-.customer-info {
-	color: #366092;
-	margin: 20px 0;
-	text-align:center;
-}
+	.print-format td,
+	.print-format th {
+		padding: 12px !important;
+	}
 
-.print-format p{
-	color: #366092;
-	font-size: 16px;
-}
-.customer-info h2{
-    font-weight: bold;
-	margin: 0px;
-    text-transform: uppercase;
-}
+	.customer-info {
+		color: #366092;
+		margin: 20px 0;
+		text-align: center;
+	}
 
-.table-bordered thead tr th,.table-bordered tbody tr td{
-	border: 1px solid #0000ff;
-}
+	.print-format p {
+		color: #366092;
+		font-size: 16px;
+	}
 
-.table-bordered thead tr th{
-	background-color:#0000ff !important;
-    color: white;
-    font-size: 15px;
-    padding: 10px;
-	text-align: center;
-	text-transform: uppercase;
-}
+	.customer-info h2 {
+		font-weight: bold;
+		margin: 0px;
+		text-transform: uppercase;
+	}
 
-.table-bordered tbody tr:nth-child(odd) td{
-	background-color: #cfe2f3;
-}
+	.table-bordered thead tr th,
+	.table-bordered tbody tr td {
+		border: 1px solid #0000ff;
+	}
 
-.address,.statement-date{
-	display: inline-block;
-}
-.address{
-	width: 60%;
-}
-.statement-date{
-	float:right;
-	width: 40%;
-}
-.address .row p ,.statement-date .row label,.value{
-	color: #948a8a;
-	font-size: 15px;
-}
+	.table-bordered thead tr th {
+		background-color: #0000ff !important;
+		color: white;
+		font-size: 15px;
+		padding: 10px;
+		text-align: center;
+		text-transform: uppercase;
+	}
 
+	.table-bordered tbody tr:nth-child(odd) td {
+		background-color: #cfe2f3;
+	}
+
+	.address,
+	.statement-date {
+		display: inline-block;
+	}
+
+	.address {
+		width: 60%;
+	}
+
+	.statement-date {
+		float: right;
+		width: 40%;
+	}
+
+	.address .row p,
+	.statement-date .row label,
+	.value {
+		color: #948a8a;
+		font-size: 15px;
+	}
 </style>
+
 <div class=row>
 	<div class="col-sm-6 address">
 		<div class="row">
-			<p> As per company letter head address</p>
+			<p>As per company letter head address</p>
 		</div>
 	</div>
-	<div class="col-sm-6 statement-date ">
+	<div class="col-sm-6 statement-date">
 		<div class="row">
-			<div  class="col-xs-5">
-				<label>Statement Date : </label>
+			<div class="col-xs-5">
+				<label>Statement Date: </label>
 			</div>
-			<div class="col-xs-7  value text-right">
-				{%= frappe.datetime.str_to_user(filters.from_date) %}  {%= __("to") %}  {%= frappe.datetime.str_to_user(filters.to_date) %}
+			<div class="col-xs-7 value text-right">
+				{{ frappe.datetime.str_to_user(filters.from_date) }} {{ __("to") }}
+				{{ frappe.datetime.str_to_user(filters.to_date) }}
 			</div>
 		</div>
 	</div>
 </div>
 
 <div class="customer-info">
-	<h2 >{%= __("Statement of Account") %}</h2>
-	<p >
+	<h2>{{ __("Statement of Account") }}</h2>
+	<p>
 		{% if (filters.party_name) { %}
-			{%= filters.party_name %}
+			{{ filters.party_name }}
 		{% } else if (filters.party && filters.party.length) { %}
-			{%= filters.party %}
+			{{ filters.party }}
 		{% } else if (filters.account) { %}
-			{%= filters.account %}
+			{{ filters.account }}
 		{% } %}
 	</p>
-
-	<p >
+	<p>
 		{% if (filters.tax_id) { %}
-		{%= __("Tax Id: ")%}	{%= filters.tax_id %}
+			{{ __("Tax ID: ") }} {{ filters.tax_id }}
 		{% } %}
 	</p>
-
-	<!-- <p>
-		{% frappe.db.get_value("Dynamic Link", {"link_doctype": "Customer", "link_name": filters.party[0]},"parent") %}
-	</p> -->
 
 </div>
 <table class="table table-bordered">
-	<thead >
+	<thead>
 		<tr>
-			<th style="width: 12%">{%= __("Date") %}</th>
-			<th style="width: 15%">{%= __("Description") %}</th>
-			<th style="width: 15%">{%= __("Invoice") %}</th>
-			<th style="width: 15%">{%= __("Payment/Credit") %}</th>
-			<th style="width: 18%">{%= __("Balance (Dr - Cr)") %}</th>
+			<th style="width: 12%">{{ __("Date") }}</th>
+			<th style="width: 15%">{{ __("Description") }}</th>
+			<th style="width: 15%">{{ __("Charges") }}</th>
+			<th style="width: 15%">{{ __("Credits") }}</th>
+			<th style="width: 18%">{{ __("Balance") }}</th>
 		</tr>
 	</thead>
 	<tbody>
-		{% for(var i=0, l=data.length; i<l; i++) { %}
+		{% for (let row of data) { %}
 			<tr>
-			{% if(data[i].posting_date) { %}
-				<td class="text-center">{%= frappe.datetime.str_to_user(data[i].posting_date) %}</td>
-				<td cellpadding="12">{%= data[i].voucher_type %}<br>{%= data[i].voucher_no %}</td>
-				<td>{%= format_currency(data[i].debit, filters.presentation_currency) %}</td>
-				<td >{%= format_currency(data[i].credit, filters.presentation_currency) %}</td>
-			{% } else { %}
-				<td></td>
-				<td><b>{%= frappe.format(data[i].account, {fieldtype: "Link"}) || "&nbsp;" %}</b></td>
+				{% if(row.posting_date) { %}
+					<td class="text-center">{{ frappe.datetime.str_to_user(row.posting_date) }}</td>
+					<td cellpadding="12">{{ row.voucher_type }}<br>{{ row.voucher_no }}</td>
+					<td>{{ format_currency(row.debit, filters.presentation_currency) }}</td>
+					<td>{{ format_currency(row.credit, filters.presentation_currency) }}</td>
+				{% } else { %}
+					<td></td>
+					<td><b>{{ frappe.format(row.account, {fieldtype: "Link"}) || "&nbsp;" }}</b></td>
+					<td class="text-right">{{ row.account && format_currency(row.debit, filters.presentation_currency) }}</td>
+					<td class="text-right">{{ row.account && format_currency(row.credit, filters.presentation_currency) }}</td>
+				{% } %}
 				<td class="text-right">
-					{%= data[i].account && format_currency(data[i].debit, filters.presentation_currency) %}
-				</td>
-				<td class="text-right" >
-					{%= data[i].account && format_currency(data[i].credit, filters.presentation_currency) %}
-				</td>
-			{% } %}
-				<td class="text-right" >
-					{%= format_currency(data[i].balance, filters.presentation_currency) %}
+					{{ format_currency(row.balance, filters.presentation_currency) }}
 				</td>
 			</tr>
 		{% } %}
 	</tbody>
 </table>
-<div class="text-right text-muted">Printed On {%= frappe.datetime.str_to_user(frappe.datetime.get_datetime_as_string()) %}</div>
+
+<div class="text-right text-muted">
+	Printed On {{ frappe.datetime.str_to_user(frappe.datetime.get_datetime_as_string()) }}
+</div>
