@@ -338,7 +338,8 @@ scheduler_events = {
 		"erpnext.selling.doctype.quotation.quotation.set_expired_status",
 		"erpnext.healthcare.doctype.patient_appointment.patient_appointment.update_appointment_status",
 		"erpnext.buying.doctype.supplier_quotation.supplier_quotation.set_expired_status",
-		"erpnext.accounts.doctype.process_statement_of_accounts.process_statement_of_accounts.send_auto_email"
+		"erpnext.accounts.doctype.process_statement_of_accounts.process_statement_of_accounts.send_auto_email",
+		"erpnext.erpnext_integrations.doctype.shopify_settings.sync_payout.sync_payouts_from_shopify"
 	],
 	"daily_long": [
 		"erpnext.setup.doctype.email_digest.email_digest.send",

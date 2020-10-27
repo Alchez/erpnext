@@ -2,39 +2,75 @@
 // License: GNU General Public License v3. See license.txt
 
 frappe.provide("erpnext_integrations.shopify_settings");
+frappe.ui.form.on("Shopify Settings", {
+	onload: function(frm) {
+		frappe.call({
+			method: "erpnext.erpnext_integrations.doctype.shopify_settings.shopify_settings.get_series",
+			callback: function (r) {
+				$.each(r.message, function (key, value) {
+					set_field_options(key, value);
+				});
+			}
+		});
+		erpnext_integrations.shopify_settings.setup_queries(frm);
+	},
 
-frappe.ui.form.on("Shopify Settings", "onload", function(frm){
-	frappe.call({
-		method:"erpnext.erpnext_integrations.doctype.shopify_settings.shopify_settings.get_series",
-		callback:function(r){
-			$.each(r.message, function(key, value){
-				set_field_options(key, value);
-			});
+	refresh: function(frm) {
+		if (!frm.is_new() && frm.doc.enable_shopify === 1) {
+			frm.toggle_reqd("price_list", true);
+			frm.toggle_reqd("warehouse", true);
+			frm.toggle_reqd("taxes", true);
+			frm.toggle_reqd("company", true);
+			frm.toggle_reqd("cost_center", true);
+			frm.toggle_reqd("cash_bank_account", true);
+			frm.toggle_reqd("sales_order_series", true);
+			frm.toggle_reqd("customer_group", true);
+			frm.toggle_reqd("shared_secret", true);
+
+			frm.toggle_reqd("sales_invoice_series", frm.doc.sync_sales_invoice);
+			frm.toggle_reqd("delivery_note_series", frm.doc.sync_delivery_note);
 		}
-	});
-	erpnext_integrations.shopify_settings.setup_queries(frm);
-})
 
-frappe.ui.form.on("Shopify Settings", "app_type", function(frm) {
-	frm.toggle_reqd("api_key", (frm.doc.app_type == "Private"));
-	frm.toggle_reqd("password", (frm.doc.app_type == "Private"));
-})
+		frm.add_custom_button(__("Products"), function () {
+			frappe.call({
+				method: "erpnext.erpnext_integrations.doctype.shopify_settings.sync_product.sync_items_from_shopify",
+				freeze: true,
+				callback: function (r) {
+					if (r.message) {
+						frappe.msgprint(__("Product sync has been queued. This may take a few minutes."));
+					}
+				}
+			})
+		}, __("Sync"))
 
-frappe.ui.form.on("Shopify Settings", "refresh", function(frm){
-	if(!frm.doc.__islocal && frm.doc.enable_shopify === 1){
-		frm.toggle_reqd("price_list", true);
-		frm.toggle_reqd("warehouse", true);
-		frm.toggle_reqd("taxes", true);
-		frm.toggle_reqd("company", true);
-		frm.toggle_reqd("cost_center", true);
-		frm.toggle_reqd("cash_bank_account", true);
-		frm.toggle_reqd("sales_order_series", true);
-		frm.toggle_reqd("customer_group", true);
-		frm.toggle_reqd("shared_secret", true);
+		frm.add_custom_button(__("Orders"), function () {
+			frappe.call({
+				method: "erpnext.erpnext_integrations.doctype.shopify_settings.sync_order.sync_orders_from_shopify",
+				freeze: true,
+				callback: function (r) {
+					if (r.message) {
+						frappe.msgprint(__("Order sync has been queued. This may take a few minutes."));
+					}
+				}
+			})
+		}, __("Sync"))
 
-		frm.toggle_reqd("sales_invoice_series", frm.doc.sync_sales_invoice);
-		frm.toggle_reqd("delivery_note_series", frm.doc.sync_delivery_note);
+		frm.add_custom_button(__("Payouts"), function() {
+			frappe.call({
+				method: "erpnext.erpnext_integrations.doctype.shopify_settings.sync_payout.sync_payouts_from_shopify",
+				freeze: true,
+				callback: function(r) {
+					if (r.message) {
+						frappe.msgprint(__("Payout sync has been queued. This may take a few minutes."));
+					}
+				}
+			})
+		}, __("Sync"))
+	},
 
+	app_type: function(frm) {
+		frm.toggle_reqd("api_key", (frm.doc.app_type == "Private"));
+		frm.toggle_reqd("password", (frm.doc.app_type == "Private"));
 	}
 })
 
